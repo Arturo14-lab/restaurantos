@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { CompanyMemberRecord, CompanyRecord, RestaurantRecord, RoleRecord } from '../types/domain'
+import type { CompanyMemberRecord, CompanyRecord, DepartmentRecord, PositionRecord, RestaurantRecord, RoleRecord } from '../types/domain'
 
 export async function getCompany(): Promise<CompanyRecord | null> {
   if (!supabase) return null
@@ -65,5 +65,33 @@ export async function getCompanyMembers(): Promise<CompanyMemberRecord[]> {
 export async function updateCompanyMember(id: string, values: { role_id: string }) {
   if (!supabase) throw new Error('Supabase no está configurado')
   const { error } = await supabase.from('company_members').update(values).eq('id', id)
+  if (error) throw error
+}
+
+export async function getDepartments(): Promise<DepartmentRecord[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.from('departments').select('id,company_id,name,description,active').order('name')
+  if (error) throw error
+  return (data ?? []) as DepartmentRecord[]
+}
+
+export async function getPositions(): Promise<PositionRecord[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.from('positions').select('id,company_id,department_id,name,description,active').order('name')
+  if (error) throw error
+  return (data ?? []) as PositionRecord[]
+}
+
+export async function saveDepartment(values: Partial<DepartmentRecord> & Pick<DepartmentRecord,'company_id'|'name'>) {
+  if (!supabase) throw new Error('Supabase no está configurado')
+  const query = values.id ? supabase.from('departments').update(values).eq('id',values.id) : supabase.from('departments').insert(values)
+  const { error } = await query
+  if (error) throw error
+}
+
+export async function savePosition(values: Partial<PositionRecord> & Pick<PositionRecord,'company_id'|'name'>) {
+  if (!supabase) throw new Error('Supabase no está configurado')
+  const query = values.id ? supabase.from('positions').update(values).eq('id',values.id) : supabase.from('positions').insert(values)
+  const { error } = await query
   if (error) throw error
 }

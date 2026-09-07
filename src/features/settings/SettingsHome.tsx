@@ -7,7 +7,7 @@ const sections = [
   { icon: UsersRound, title: 'Usuarios', text: 'Invitaciones, acceso y pertenencia a la empresa.', status: '1 usuario', to: '/configuracion/usuarios' },
   { icon: ShieldCheck, title: 'Roles y permisos', text: 'Capacidades por empresa, restaurante y módulo.', status: '5 roles base', to: '/configuracion/roles' },
   { icon: Puzzle, title: 'Módulos', text: 'Funciones activas para esta organización.', status: '4 activos' },
-  { icon: SlidersHorizontal, title: 'Catálogos', text: 'Departamentos, puestos, categorías y unidades.', status: 'Configurar' },
+  { icon: SlidersHorizontal, title: 'Catálogos', text: 'Departamentos, puestos, categorías y unidades.', status: 'Configurar', to: '/configuracion/catalogos' },
   { icon: CreditCard, title: 'Plan y facturación', text: 'Plan contratado, límites, uso y facturas.', status: 'Desarrollo' },
 ]
 

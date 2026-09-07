@@ -18,6 +18,7 @@ import { ActionCenter } from './features/schedule/ActionCenter'
 import { EmployeePortal } from './features/employee/EmployeePortal'
 import { OperationsHub } from './features/operations/OperationsHub'
 import { PurchasesHub } from './features/purchases/PurchasesHub'
+import { InventoryHub } from './features/inventory/InventoryHub'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -198,7 +199,7 @@ export default function App() {
     <Route path="/fichajes" element={<TimeTracking/>}/>
     <Route path="/operaciones" element={<OperationsHub/>}/>
     <Route path="/compras" element={<PurchasesHub/>}/>
-    <Route path="/inventario" element={<ModulePlaceholder icon={Boxes} eyebrow="Gestión" title="Inventario" description="Control de producto por ubicación con trazabilidad completa de cada movimiento." items={['Productos y unidades','Stock por almacén','Inventarios','Movimientos y mermas']}/>}/>
+    <Route path="/inventario" element={<InventoryHub/>}/>
     <Route path="/rentabilidad" element={<ModulePlaceholder icon={BarChart3} eyebrow="Análisis" title="Rentabilidad" description="Costes, recetas y resultados convertidos en información útil para tomar decisiones." items={['Recetas y escandallos','Gastos','Coste laboral','Resultado operativo']}/>}/>
     <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeePortal/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>

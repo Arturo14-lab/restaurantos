@@ -1,13 +1,24 @@
 export type EmployeeRecord = {
   id: string
+  company_id?: string
   employee_code: string | null
   first_name: string
   last_name: string
   email: string | null
+  phone?: string | null
+  position_id?: string | null
+  department_id?: string | null
+  hire_date?: string | null
+  weekly_contract_hours?: number | null
+  hourly_cost?: number | null
+  notes?: string | null
   status: string
   departments: { name: string } | null
   positions: { name: string } | null
 }
+
+export type DepartmentRecord = { id: string; company_id: string; name: string; description: string | null; active: boolean }
+export type PositionRecord = { id: string; company_id: string; department_id: string | null; name: string; description: string | null; active: boolean }
 
 export type ShiftRecord = {
   id: string

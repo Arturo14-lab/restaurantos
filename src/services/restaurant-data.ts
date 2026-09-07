@@ -5,10 +5,27 @@ export async function getEmployees(): Promise<EmployeeRecord[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('employees')
-    .select('id, employee_code, first_name, last_name, email, status, departments(name), positions(name)')
+    .select('id,company_id,employee_code,first_name,last_name,email,phone,position_id,department_id,hire_date,weekly_contract_hours,hourly_cost,status,notes,departments(name),positions(name)')
     .order('first_name')
   if (error) throw error
   return (data ?? []) as unknown as EmployeeRecord[]
+}
+
+export async function saveEmployee(values: Partial<EmployeeRecord> & Pick<EmployeeRecord, 'company_id' | 'first_name' | 'last_name'>, restaurantId?: string) {
+  if (!supabase) throw new Error('Supabase no está configurado')
+  const payload = { ...values }
+  delete payload.departments
+  delete payload.positions
+  const query = values.id
+    ? supabase.from('employees').update(payload).eq('id', values.id)
+    : supabase.from('employees').insert(payload)
+  const { data, error } = await query.select('id').single()
+  if (error) throw error
+  if (restaurantId) {
+    const { error: assignmentError } = await supabase.from('employee_restaurants').upsert({ employee_id: data.id, restaurant_id: restaurantId, is_primary: true }, { onConflict: 'employee_id,restaurant_id' })
+    if (assignmentError) throw assignmentError
+  }
+  return data.id as string
 }
 
 export async function getWeekShifts(startDate = '2026-09-07', endDate = '2026-09-13'): Promise<ShiftRecord[]> {

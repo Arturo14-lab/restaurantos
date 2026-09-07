@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 const sections = [
   { icon: Building2, title: 'Empresa', text: 'Datos fiscales, identidad, moneda y zona horaria.', status: 'Configurada', to: '/configuracion/empresa' },
   { icon: MapPin, title: 'Restaurantes', text: 'Locales, direcciones, horarios, zonas y almacenes.', status: '1 restaurante', to: '/configuracion/restaurantes' },
-  { icon: UsersRound, title: 'Usuarios', text: 'Invitaciones, acceso y pertenencia a la empresa.', status: '1 usuario' },
-  { icon: ShieldCheck, title: 'Roles y permisos', text: 'Capacidades por empresa, restaurante y módulo.', status: '5 roles base' },
+  { icon: UsersRound, title: 'Usuarios', text: 'Invitaciones, acceso y pertenencia a la empresa.', status: '1 usuario', to: '/configuracion/usuarios' },
+  { icon: ShieldCheck, title: 'Roles y permisos', text: 'Capacidades por empresa, restaurante y módulo.', status: '5 roles base', to: '/configuracion/roles' },
   { icon: Puzzle, title: 'Módulos', text: 'Funciones activas para esta organización.', status: '4 activos' },
   { icon: SlidersHorizontal, title: 'Catálogos', text: 'Departamentos, puestos, categorías y unidades.', status: 'Configurar' },
   { icon: CreditCard, title: 'Plan y facturación', text: 'Plan contratado, límites, uso y facturas.', status: 'Desarrollo' },

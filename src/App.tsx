@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
-import { ArrowRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, Clock3, LayoutDashboard, LogOut, Menu, Plus, Search, Users, UtensilsCrossed, X } from 'lucide-react'
+import { ArrowRight, BarChart3, Bell, Boxes, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, ClipboardCheck, Clock3, LayoutDashboard, ListTodo, LogOut, Menu, Plus, Search, Settings, ShoppingCart, Users, UtensilsCrossed, Wrench, X } from 'lucide-react'
 import { employees, shifts } from './data/demo'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { getDashboardMetrics, getEmployees, getWeekShifts } from './services/restaurant-data'
+import { ModulePlaceholder } from './features/shared/ModulePlaceholder'
+import { SettingsHome } from './features/settings/SettingsHome'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -52,15 +55,18 @@ function Logo({ light=false }: { light?: boolean }) { return <div className={`fl
 
 function Shell({ children, onLogout }: { children: ReactNode; onLogout: () => void }) {
   const [open, setOpen] = useState(false)
-  const links = [
-    ['/', LayoutDashboard, 'Dashboard'], ['/empleados', Users, 'Empleados'], ['/horarios', CalendarDays, 'Horarios'], ['/mi-app', CircleUserRound, 'App empleado'],
+  const groups = [
+    { label:'General', links:[['/',LayoutDashboard,'Dashboard'],['/acciones',ListTodo,'Centro de acciones']] },
+    { label:'Personal', links:[['/empleados',Users,'Empleados'],['/horarios',CalendarDays,'Horarios'],['/fichajes',Clock3,'Fichajes']] },
+    { label:'Gestión', links:[['/operaciones',ClipboardCheck,'Operaciones'],['/compras',ShoppingCart,'Compras'],['/inventario',Boxes,'Inventario'],['/rentabilidad',BarChart3,'Rentabilidad']] },
+    { label:'Cuenta', links:[['/configuracion',Settings,'Configuración'],['/mi-app',CircleUserRound,'App empleado']] },
   ] as const
   return <div className="min-h-screen bg-[#f4f6f2] lg:grid lg:grid-cols-[250px_1fr]">
     {open && <button aria-label="Cerrar menú" onClick={()=>setOpen(false)} className="fixed inset-0 bg-black/30 z-30 lg:hidden" />}
     <aside className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-[250px] bg-[#102820] text-white px-4 py-6 flex flex-col transition-transform ${open?'translate-x-0':'-translate-x-full lg:translate-x-0'}`}>
       <div className="px-3 flex justify-between items-center"><Logo light/><button onClick={()=>setOpen(false)} className="lg:hidden text-white/60"><X/></button></div>
       <div className="mt-10 px-3"><p className="text-[12px] uppercase tracking-widest text-white/40">Restaurante</p><p className="font-medium mt-2">Valencia Centro</p></div>
-      <nav className="mt-8 space-y-1">{links.map(([to, Icon, label])=><NavLink key={to} end={to==='/'} to={to} onClick={()=>setOpen(false)} className={({isActive})=>`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${isActive?'bg-white/12 text-white':'text-white/58 hover:bg-white/7 hover:text-white'}`}><Icon size={19}/>{label}</NavLink>)}</nav>
+      <nav className="mt-7 space-y-5 overflow-y-auto pr-1">{groups.map(group=><div key={group.label}><p className="px-3 mb-1 text-[11px] uppercase tracking-[.16em] text-white/30">{group.label}</p>{group.links.map(([to,Icon,label])=><NavLink key={to} end={to==='/'} to={to} onClick={()=>setOpen(false)} className={({isActive})=>`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${isActive?'bg-white/12 text-white':'text-white/58 hover:bg-white/7 hover:text-white'}`}><Icon size={18}/>{label}</NavLink>)}</div>)}</nav>
       <button onClick={onLogout} className="mt-auto flex items-center gap-3 px-3 py-3 text-sm text-white/55 hover:text-white"><LogOut size={18}/>Cerrar sesión</button>
     </aside>
     <div className="min-w-0">
@@ -80,27 +86,7 @@ function Dashboard() {
   const [metrics,setMetrics]=useState({employees:3,hours:120,shifts:15,vacations:1,entries:1,today:3})
   useEffect(()=>{
     if(!supabase) return
-    Promise.all([
-      supabase.from('employees').select('id',{count:'exact',head:true}).eq('status','active'),
-      supabase.from('shifts').select('shift_date,start_time,end_time').gte('shift_date','2026-09-07').lte('shift_date','2026-09-13'),
-      supabase.from('vacation_requests').select('id',{count:'exact',head:true}).eq('status','pending'),
-      supabase.from('time_entries').select('id',{count:'exact',head:true}).gte('clock_in','2026-09-07T00:00:00+02:00').lt('clock_in','2026-09-08T00:00:00+02:00'),
-    ]).then(([employeeResult,shiftResult,vacationResult,entryResult])=>{
-      if(employeeResult.error||shiftResult.error||vacationResult.error||entryResult.error) return
-      const realShifts=shiftResult.data??[]
-      const hours=realShifts.reduce((total,row)=>{
-        const toHours=(value:string)=>{const [h,m]=value.slice(0,5).split(':').map(Number);return h+m/60}
-        return total+Math.max(0,toHours(row.end_time)-toHours(row.start_time))
-      },0)
-      setMetrics({
-        employees:employeeResult.count??0,
-        hours,
-        shifts:realShifts.length,
-        vacations:vacationResult.count??0,
-        entries:entryResult.count??0,
-        today:realShifts.filter(row=>row.shift_date==='2026-09-07').length,
-      })
-    })
+    getDashboardMetrics().then(setMetrics).catch(()=>undefined)
   },[])
   return <div className="fade-in"><PageTitle eyebrow="Lunes, 7 de septiembre" title="Buenos días, Arturo"/><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4"><Stat label="Equipo activo" value={String(metrics.employees)} note={`${metrics.today} trabajando hoy`} icon={Users} tone="bg-[#e5f0e9] text-[#2f6a54]"/><Stat label="Horas esta semana" value={`${metrics.hours} h`} note={`${metrics.shifts} turnos publicados`} icon={Clock3} tone="bg-[#fff0e5] text-[#c4632f]"/><Stat label="Vacaciones" value={String(metrics.vacations)} note="Pendientes de revisar" icon={CalendarDays} tone="bg-[#eeeaf8] text-[#6d5b9f]"/><Stat label="Fichajes de hoy" value={`${metrics.entries}/${metrics.today}`} note="Registros completados" icon={Check} tone="bg-[#e5eef4] text-[#3c718c]"/></div>
   <div className="grid xl:grid-cols-[1.35fr_.65fr] gap-5 mt-5"><section className="card p-5 sm:p-6"><div className="flex justify-between"><div><h2 className="font-semibold text-lg">Turnos de hoy</h2><p className="text-sm text-[#748079] mt-1">Lunes, 7 de septiembre</p></div><NavLink to="/horarios" className="text-sm font-semibold text-[#2f6a54]">Ver horario</NavLink></div><div className="mt-5 divide-y divide-[#edf0ed]">{employees.slice(0,3).map((e,i)=><div key={e.id} className="py-4 flex items-center gap-3"><Avatar employee={e}/><div className="min-w-0"><p className="font-medium">{e.name}</p><p className="text-sm text-[#7a847f]">{e.role} · {e.department}</p></div><div className="ml-auto text-right"><p className="font-medium text-sm">{['10:00–16:00','09:00–17:00','12:00–20:00'][i]}</p><p className={`text-xs mt-1 ${i===0?'text-[#2f6a54]':'text-[#89928e]'}`}>{i===0?'Trabajando':'Próximamente'}</p></div></div>)}</div></section>
@@ -108,12 +94,6 @@ function Dashboard() {
 }
 
 function Avatar({employee}:{employee:typeof employees[number]}) { return <span style={{background:employee.color}} className="h-10 w-10 shrink-0 rounded-full text-white grid place-items-center text-sm font-semibold">{employee.initials}</span> }
-type EmployeeRow = {
-  id: string; employee_code: string | null; first_name: string; last_name: string;
-  email: string | null; status: string; departments: { name: string } | null;
-  positions: { name: string } | null
-}
-
 function Employees() {
   const [q,setQ]=useState('')
   const [team,setTeam]=useState(employees)
@@ -123,15 +103,10 @@ function Employees() {
   useEffect(()=>{
     if(!supabase) return
     let active=true
-    supabase.from('employees')
-      .select('id, employee_code, first_name, last_name, email, status, departments(name), positions(name)')
-      .order('first_name')
-      .then(({data,error})=>{
+    getEmployees().then(data=>{
         if(!active) return
-        if(error){ setLoadError('No hemos podido cargar el equipo. Revisa los permisos del usuario.'); setTeam([]) }
-        else {
-          const colors=['#db7c43','#5e8f78','#71669b','#3c718c']
-          setTeam(((data ?? []) as unknown as EmployeeRow[]).map((row,index)=>({
+        const colors=['#db7c43','#5e8f78','#71669b','#3c718c']
+          setTeam(data.map((row,index)=>({
             id:row.id,
             name:`${row.first_name} ${row.last_name}`.trim(),
             initials:`${row.first_name[0] ?? ''}${row.last_name[0] ?? ''}`.toUpperCase(),
@@ -142,19 +117,13 @@ function Employees() {
             status:row.status==='active' ? 'Activo' : 'Ausente',
             color:colors[index%colors.length],
           })))
-        }
         setLoading(false)
-      })
+      }).catch(()=>{if(active){setLoadError('No hemos podido cargar el equipo. Revisa los permisos del usuario.');setTeam([]);setLoading(false)}})
     return()=>{active=false}
   },[])
 
   const filtered=team.filter(e=>(e.name+e.role+e.department).toLowerCase().includes(q.toLowerCase()))
   return <div className="fade-in"><PageTitle eyebrow="Personal" title="Equipo" action={<button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm flex items-center gap-2"><Plus size={17}/>Añadir empleado</button>}/><div className="card overflow-hidden"><div className="p-4 border-b border-[#e7ebe7]"><label className="relative block max-w-sm"><Search className="absolute left-3 top-3 text-[#87908b]" size={18}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar en el equipo…" className="h-11 w-full pl-10 pr-4 rounded-xl bg-[#f4f6f2] outline-none focus:ring-2 focus:ring-[#2f6a54]/20"/></label></div><div className="divide-y divide-[#edf0ed]">{loading&&<p className="p-10 text-center text-[#7b8580]">Cargando el equipo…</p>}{loadError&&<p role="alert" className="p-5 m-4 rounded-xl bg-red-50 text-red-700 text-sm">{loadError}</p>}{!loading&&filtered.map(e=><div key={e.id} className="p-4 sm:px-6 flex flex-wrap items-center gap-4"><Avatar employee={e}/><div className="min-w-[180px] flex-1"><p className="font-semibold">{e.name}</p><p className="text-sm text-[#78827d] mt-1">{e.email}</p></div><div className="w-36"><p className="text-sm font-medium">{e.role}</p><p className="text-xs text-[#89928d] mt-1">{e.department}</p></div><span className={`text-xs font-semibold rounded-full px-3 py-1 ${e.status==='Activo'?'bg-[#e4f0e9] text-[#2d6b50]':'bg-[#fff0e4] text-[#a65128]'}`}>{e.status}</span><span className="text-sm text-[#7f8984] w-16">{e.code}</span><button className="text-sm font-semibold text-[#2f6a54]">Ver ficha</button></div>)}{!loading&&!loadError&&filtered.length===0&&<p className="p-10 text-center text-[#7b8580]">No hay resultados para esa búsqueda.</p>}</div></div></div>
-}
-
-type ShiftRow = {
-  id:string; employee_id:string; shift_date:string; start_time:string; end_time:string;
-  departments:{name:string}|null; employees:{id:string;first_name:string;last_name:string}|null
 }
 
 function Schedule() {
@@ -166,15 +135,9 @@ function Schedule() {
   useEffect(()=>{
     if(!supabase) return
     let active=true
-    supabase.from('shifts')
-      .select('id, employee_id, shift_date, start_time, end_time, departments(name), employees(id, first_name, last_name)')
-      .gte('shift_date','2026-09-07').lte('shift_date','2026-09-13')
-      .order('shift_date').order('start_time')
-      .then(({data,error})=>{
+    getWeekShifts().then(data=>{
         if(!active) return
-        if(error){ setLoadError('No hemos podido cargar los turnos. Revisa los permisos del horario.'); setScheduleTeam([]); setScheduleShifts([]) }
-        else {
-          const rows=(data??[]) as unknown as ShiftRow[]
+          const rows=data
           const people=new Map<string,typeof employees[number]>()
           const colors=['#db7c43','#5e8f78','#71669b','#3c718c']
           rows.forEach(row=>{
@@ -195,9 +158,8 @@ function Schedule() {
             time:`${row.start_time.slice(0,5)}–${row.end_time.slice(0,5)}`,
             area:row.departments?.name??'Turno',
           })))
-        }
         setLoading(false)
-      })
+      }).catch(()=>{if(active){setLoadError('No hemos podido cargar los turnos. Revisa los permisos del horario.');setScheduleTeam([]);setScheduleShifts([]);setLoading(false)}})
     return()=>{active=false}
   },[])
 
@@ -217,5 +179,16 @@ export default function App() {
   const login=()=>{sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true);nav('/')}
   const logout=async()=>{if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('restaurantos-session');setLoggedIn(false);nav('/login')}
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
-  return <Shell onLogout={logout}><Routes><Route path="/" element={<Dashboard/>}/><Route path="/empleados" element={<Employees/>}/><Route path="/horarios" element={<Schedule/>}/><Route path="/mi-app" element={<EmployeeApp/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></Shell>
+  return <Shell onLogout={logout}><Routes>
+    <Route path="/" element={<Dashboard/>}/>
+    <Route path="/acciones" element={<ModulePlaceholder icon={ListTodo} eyebrow="General" title="Centro de acciones" description="Una bandeja única para aprobar solicitudes, revisar incidencias y resolver asuntos pendientes." items={['Vacaciones y ausencias','Cambios de turno','Compras por aprobar','Incidencias prioritarias']}/>}/>
+    <Route path="/empleados" element={<Employees/>}/><Route path="/horarios" element={<Schedule/>}/>
+    <Route path="/fichajes" element={<ModulePlaceholder icon={Clock3} eyebrow="Personal" title="Fichajes" description="Jornadas previstas y reales, correcciones, pausas y alertas de asistencia." items={['Panel de hoy','Revisión de registros','Horas planificadas vs. reales','Exportación mensual']}/>}/>
+    <Route path="/operaciones" element={<ModulePlaceholder icon={Wrench} eyebrow="Gestión" title="Operaciones" description="La actividad diaria del local, desde la apertura hasta el mantenimiento preventivo." items={['Tareas recurrentes','Apertura y cierre','Incidencias','Equipos y mantenimiento']}/>}/>
+    <Route path="/compras" element={<ModulePlaceholder icon={ShoppingCart} eyebrow="Gestión" title="Compras" description="Proveedores, pedidos, tickets y facturas conectados con costes e inventario." items={['Bandeja de documentos','Proveedores','Pedidos y recepciones','Facturas y aprobaciones']}/>}/>
+    <Route path="/inventario" element={<ModulePlaceholder icon={Boxes} eyebrow="Gestión" title="Inventario" description="Control de producto por ubicación con trazabilidad completa de cada movimiento." items={['Productos y unidades','Stock por almacén','Inventarios','Movimientos y mermas']}/>}/>
+    <Route path="/rentabilidad" element={<ModulePlaceholder icon={BarChart3} eyebrow="Análisis" title="Rentabilidad" description="Costes, recetas y resultados convertidos en información útil para tomar decisiones." items={['Recetas y escandallos','Gastos','Coste laboral','Resultado operativo']}/>}/>
+    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/mi-app" element={<EmployeeApp/>}/>
+    <Route path="*" element={<Navigate to="/" replace/>}/>
+  </Routes></Shell>
 }

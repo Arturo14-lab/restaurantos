@@ -56,7 +56,10 @@ export function EmployeePortal() {
         <button disabled={data.preview || !data.restaurantId} onClick={registerClock} className="mt-10 w-full h-12 bg-white text-[#173c2e] rounded-xl font-semibold disabled:opacity-50">{openEntry ? 'Finalizar jornada' : 'Fichar entrada'}</button>
       </section>
       <section className="card p-6"><h2 className="font-semibold text-lg">Próximos turnos</h2><div className="mt-4 divide-y">
-        {data.shifts.length === 0 ? <p className="py-6 text-[#78827d]">No hay próximos turnos.</p> : data.shifts.map(shift => <div key={shift.id} className="py-4 flex items-center"><span className="h-12 w-14 rounded-xl bg-[#fff0e5] text-[#b85828] grid place-items-center text-xs font-bold">{new Date(`${shift.shift_date}T12:00`).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span><div className="ml-4"><p className="font-semibold">{shift.start_time.slice(0, 5)}–{shift.end_time.slice(0, 5)}</p><p className="text-sm text-[#7c8681]">{shift.departments?.name || 'Turno'}</p></div></div>)}
+        {data.shifts.length === 0 ? <p className="py-6 text-[#78827d]">No hay próximos turnos.</p> : data.shifts.map(shift => {
+          const department = Array.isArray(shift.departments) ? shift.departments[0] : shift.departments
+          return <div key={shift.id} className="py-4 flex items-center"><span className="h-12 w-14 rounded-xl bg-[#fff0e5] text-[#b85828] grid place-items-center text-xs font-bold">{new Date(`${shift.shift_date}T12:00`).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span><div className="ml-4"><p className="font-semibold">{shift.start_time.slice(0, 5)}–{shift.end_time.slice(0, 5)}</p><p className="text-sm text-[#7c8681]">{department?.name || 'Turno'}</p></div></div>
+        })}
       </div></section>
     </div>
     <div className="grid sm:grid-cols-2 gap-5 mt-5">

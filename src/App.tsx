@@ -8,6 +8,8 @@ import { ModulePlaceholder } from './features/shared/ModulePlaceholder'
 import { SettingsHome } from './features/settings/SettingsHome'
 import { CompanySettings } from './features/settings/CompanySettings'
 import { RestaurantsSettings } from './features/settings/RestaurantsSettings'
+import { UsersSettings } from './features/settings/UsersSettings'
+import { RolesSettings } from './features/settings/RolesSettings'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -190,7 +192,7 @@ export default function App() {
     <Route path="/compras" element={<ModulePlaceholder icon={ShoppingCart} eyebrow="Gestión" title="Compras" description="Proveedores, pedidos, tickets y facturas conectados con costes e inventario." items={['Bandeja de documentos','Proveedores','Pedidos y recepciones','Facturas y aprobaciones']}/>}/>
     <Route path="/inventario" element={<ModulePlaceholder icon={Boxes} eyebrow="Gestión" title="Inventario" description="Control de producto por ubicación con trazabilidad completa de cada movimiento." items={['Productos y unidades','Stock por almacén','Inventarios','Movimientos y mermas']}/>}/>
     <Route path="/rentabilidad" element={<ModulePlaceholder icon={BarChart3} eyebrow="Análisis" title="Rentabilidad" description="Costes, recetas y resultados convertidos en información útil para tomar decisiones." items={['Recetas y escandallos','Gastos','Coste laboral','Resultado operativo']}/>}/>
-    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/mi-app" element={<EmployeeApp/>}/>
+    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/mi-app" element={<EmployeeApp/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Shell>
 }

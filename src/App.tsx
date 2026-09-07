@@ -12,6 +12,10 @@ import { UsersSettings } from './features/settings/UsersSettings'
 import { RolesSettings } from './features/settings/RolesSettings'
 import { CatalogsSettings } from './features/settings/CatalogsSettings'
 import { EmployeesManagement } from './features/people/EmployeesManagement'
+import { ScheduleManagement } from './features/schedule/ScheduleManagement'
+import { TimeTracking } from './features/schedule/TimeTracking'
+import { ActionCenter } from './features/schedule/ActionCenter'
+import { EmployeePortal } from './features/employee/EmployeePortal'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -187,14 +191,14 @@ export default function App() {
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
   return <Shell onLogout={logout}><Routes>
     <Route path="/" element={<Dashboard/>}/>
-    <Route path="/acciones" element={<ModulePlaceholder icon={ListTodo} eyebrow="General" title="Centro de acciones" description="Una bandeja única para aprobar solicitudes, revisar incidencias y resolver asuntos pendientes." items={['Vacaciones y ausencias','Cambios de turno','Compras por aprobar','Incidencias prioritarias']}/>}/>
-    <Route path="/empleados" element={<EmployeesManagement/>}/><Route path="/horarios" element={<Schedule/>}/>
-    <Route path="/fichajes" element={<ModulePlaceholder icon={Clock3} eyebrow="Personal" title="Fichajes" description="Jornadas previstas y reales, correcciones, pausas y alertas de asistencia." items={['Panel de hoy','Revisión de registros','Horas planificadas vs. reales','Exportación mensual']}/>}/>
+    <Route path="/acciones" element={<ActionCenter/>}/>
+    <Route path="/empleados" element={<EmployeesManagement/>}/><Route path="/horarios" element={<ScheduleManagement/>}/>
+    <Route path="/fichajes" element={<TimeTracking/>}/>
     <Route path="/operaciones" element={<ModulePlaceholder icon={Wrench} eyebrow="Gestión" title="Operaciones" description="La actividad diaria del local, desde la apertura hasta el mantenimiento preventivo." items={['Tareas recurrentes','Apertura y cierre','Incidencias','Equipos y mantenimiento']}/>}/>
     <Route path="/compras" element={<ModulePlaceholder icon={ShoppingCart} eyebrow="Gestión" title="Compras" description="Proveedores, pedidos, tickets y facturas conectados con costes e inventario." items={['Bandeja de documentos','Proveedores','Pedidos y recepciones','Facturas y aprobaciones']}/>}/>
     <Route path="/inventario" element={<ModulePlaceholder icon={Boxes} eyebrow="Gestión" title="Inventario" description="Control de producto por ubicación con trazabilidad completa de cada movimiento." items={['Productos y unidades','Stock por almacén','Inventarios','Movimientos y mermas']}/>}/>
     <Route path="/rentabilidad" element={<ModulePlaceholder icon={BarChart3} eyebrow="Análisis" title="Rentabilidad" description="Costes, recetas y resultados convertidos en información útil para tomar decisiones." items={['Recetas y escandallos','Gastos','Coste laboral','Resultado operativo']}/>}/>
-    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeeApp/>}/>
+    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeePortal/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Shell>
 }

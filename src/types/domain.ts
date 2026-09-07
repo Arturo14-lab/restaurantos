@@ -22,13 +22,25 @@ export type PositionRecord = { id: string; company_id: string; department_id: st
 
 export type ShiftRecord = {
   id: string
+  schedule_period_id?: string
+  restaurant_id?: string
   employee_id: string
+  position_id?: string | null
+  department_id?: string | null
   shift_date: string
   start_time: string
   end_time: string
+  break_minutes?: number
+  notes?: string | null
+  status?: string
   departments: { name: string } | null
   employees: { id: string; first_name: string; last_name: string } | null
 }
+
+export type SchedulePeriodRecord = { id:string; restaurant_id:string; start_date:string; end_date:string; status:string; published_at:string|null }
+export type TimeEntryRecord = { id:string; employee_id:string; restaurant_id:string; shift_id:string|null; clock_in:string; clock_out:string|null; break_minutes:number; source:string; status:string; notes:string|null; employees:{first_name:string;last_name:string}|null }
+export type VacationRequestRecord = { id:string; employee_id:string; start_date:string; end_date:string; status:string; employee_notes:string|null; employees:{first_name:string;last_name:string}|null }
+export type ShiftChangeRequestRecord = { id:string; shift_id:string; requested_by_employee_id:string; replacement_employee_id:string|null; request_type:string; status:string; reason:string|null; employees:{first_name:string;last_name:string}|null; shifts:{shift_date:string;start_time:string;end_time:string}|null }
 
 export type DashboardMetrics = {
   employees: number

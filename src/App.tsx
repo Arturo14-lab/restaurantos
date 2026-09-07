@@ -76,9 +76,36 @@ function Shell({ children, onLogout }: { children: ReactNode; onLogout: () => vo
 function PageTitle({ eyebrow, title, action }: {eyebrow:string; title:string; action?:ReactNode}) { return <div className="flex flex-wrap gap-4 items-end justify-between mb-8"><div><p className="text-sm text-[#bd622f] font-semibold">{eyebrow}</p><h1 className="text-3xl font-semibold tracking-tight mt-1">{title}</h1></div>{action}</div> }
 function Stat({label,value,note,icon:Icon,tone}:{label:string;value:string;note:string;icon:typeof Users;tone:string}) { return <div className="card p-5 soft-shadow"><div className="flex items-start justify-between"><div><p className="text-sm text-[#748079]">{label}</p><p className="text-3xl font-semibold mt-2">{value}</p></div><span className={`h-11 w-11 rounded-xl grid place-items-center ${tone}`}><Icon size={21}/></span></div><p className="text-sm text-[#5f6b65] mt-4">{note}</p></div> }
 
-function Dashboard() { return <div className="fade-in"><PageTitle eyebrow="Lunes, 7 de septiembre" title="Buenos días, Lucía"/><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4"><Stat label="Equipo activo" value="3" note="2 trabajando hoy" icon={Users} tone="bg-[#e5f0e9] text-[#2f6a54]"/><Stat label="Horas esta semana" value="86 h" note="12 turnos publicados" icon={Clock3} tone="bg-[#fff0e5] text-[#c4632f]"/><Stat label="Ausencias" value="1" note="Pendiente de revisar" icon={CalendarDays} tone="bg-[#eeeaf8] text-[#6d5b9f]"/><Stat label="Fichajes de hoy" value="1/2" note="Carlos ha fichado" icon={Check} tone="bg-[#e5eef4] text-[#3c718c]"/></div>
+function Dashboard() {
+  const [metrics,setMetrics]=useState({employees:3,hours:120,shifts:15,vacations:1,entries:1,today:3})
+  useEffect(()=>{
+    if(!supabase) return
+    Promise.all([
+      supabase.from('employees').select('id',{count:'exact',head:true}).eq('status','active'),
+      supabase.from('shifts').select('shift_date,start_time,end_time').gte('shift_date','2026-09-07').lte('shift_date','2026-09-13'),
+      supabase.from('vacation_requests').select('id',{count:'exact',head:true}).eq('status','pending'),
+      supabase.from('time_entries').select('id',{count:'exact',head:true}).gte('clock_in','2026-09-07T00:00:00+02:00').lt('clock_in','2026-09-08T00:00:00+02:00'),
+    ]).then(([employeeResult,shiftResult,vacationResult,entryResult])=>{
+      if(employeeResult.error||shiftResult.error||vacationResult.error||entryResult.error) return
+      const realShifts=shiftResult.data??[]
+      const hours=realShifts.reduce((total,row)=>{
+        const toHours=(value:string)=>{const [h,m]=value.slice(0,5).split(':').map(Number);return h+m/60}
+        return total+Math.max(0,toHours(row.end_time)-toHours(row.start_time))
+      },0)
+      setMetrics({
+        employees:employeeResult.count??0,
+        hours,
+        shifts:realShifts.length,
+        vacations:vacationResult.count??0,
+        entries:entryResult.count??0,
+        today:realShifts.filter(row=>row.shift_date==='2026-09-07').length,
+      })
+    })
+  },[])
+  return <div className="fade-in"><PageTitle eyebrow="Lunes, 7 de septiembre" title="Buenos días, Arturo"/><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4"><Stat label="Equipo activo" value={String(metrics.employees)} note={`${metrics.today} trabajando hoy`} icon={Users} tone="bg-[#e5f0e9] text-[#2f6a54]"/><Stat label="Horas esta semana" value={`${metrics.hours} h`} note={`${metrics.shifts} turnos publicados`} icon={Clock3} tone="bg-[#fff0e5] text-[#c4632f]"/><Stat label="Vacaciones" value={String(metrics.vacations)} note="Pendientes de revisar" icon={CalendarDays} tone="bg-[#eeeaf8] text-[#6d5b9f]"/><Stat label="Fichajes de hoy" value={`${metrics.entries}/${metrics.today}`} note="Registros completados" icon={Check} tone="bg-[#e5eef4] text-[#3c718c]"/></div>
   <div className="grid xl:grid-cols-[1.35fr_.65fr] gap-5 mt-5"><section className="card p-5 sm:p-6"><div className="flex justify-between"><div><h2 className="font-semibold text-lg">Turnos de hoy</h2><p className="text-sm text-[#748079] mt-1">Lunes, 7 de septiembre</p></div><NavLink to="/horarios" className="text-sm font-semibold text-[#2f6a54]">Ver horario</NavLink></div><div className="mt-5 divide-y divide-[#edf0ed]">{employees.slice(0,3).map((e,i)=><div key={e.id} className="py-4 flex items-center gap-3"><Avatar employee={e}/><div className="min-w-0"><p className="font-medium">{e.name}</p><p className="text-sm text-[#7a847f]">{e.role} · {e.department}</p></div><div className="ml-auto text-right"><p className="font-medium text-sm">{['10:00–16:00','09:00–17:00','12:00–20:00'][i]}</p><p className={`text-xs mt-1 ${i===0?'text-[#2f6a54]':'text-[#89928e]'}`}>{i===0?'Trabajando':'Próximamente'}</p></div></div>)}</div></section>
-  <section className="card p-5 sm:p-6"><h2 className="font-semibold text-lg">Necesita atención</h2><div className="mt-5 rounded-xl bg-[#fff5ed] p-4 border border-[#f5ddca]"><span className="text-xs font-semibold text-[#bc5c2c]">VACACIONES</span><p className="font-medium mt-2">Solicitud de Laura</p><p className="text-sm text-[#756b65] mt-1">21–25 de septiembre</p><button className="mt-4 text-sm font-semibold text-[#9e4a22]">Revisar solicitud →</button></div><div className="mt-3 rounded-xl bg-[#eef3ef] p-4"><span className="text-xs font-semibold text-[#3a6653]">CAMBIO DE TURNO</span><p className="font-medium mt-2">Carlos solicita un cambio</p><p className="text-sm text-[#68736d] mt-1">Miércoles, turno de tarde</p></div></section></div></div> }
+  <section className="card p-5 sm:p-6"><h2 className="font-semibold text-lg">Necesita atención</h2><div className="mt-5 rounded-xl bg-[#fff5ed] p-4 border border-[#f5ddca]"><span className="text-xs font-semibold text-[#bc5c2c]">VACACIONES</span><p className="font-medium mt-2">Solicitud pendiente</p><p className="text-sm text-[#756b65] mt-1">21–23 de septiembre</p><button className="mt-4 text-sm font-semibold text-[#9e4a22]">Revisar solicitud →</button></div><div className="mt-3 rounded-xl bg-[#eef3ef] p-4"><span className="text-xs font-semibold text-[#3a6653]">CAMBIO DE TURNO</span><p className="font-medium mt-2">Carlos solicita un cambio</p><p className="text-sm text-[#68736d] mt-1">Miércoles, turno de tarde</p></div></section></div></div>
+}
 
 function Avatar({employee}:{employee:typeof employees[number]}) { return <span style={{background:employee.color}} className="h-10 w-10 shrink-0 rounded-full text-white grid place-items-center text-sm font-semibold">{employee.initials}</span> }
 type EmployeeRow = {
@@ -125,7 +152,62 @@ function Employees() {
   return <div className="fade-in"><PageTitle eyebrow="Personal" title="Equipo" action={<button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm flex items-center gap-2"><Plus size={17}/>Añadir empleado</button>}/><div className="card overflow-hidden"><div className="p-4 border-b border-[#e7ebe7]"><label className="relative block max-w-sm"><Search className="absolute left-3 top-3 text-[#87908b]" size={18}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar en el equipo…" className="h-11 w-full pl-10 pr-4 rounded-xl bg-[#f4f6f2] outline-none focus:ring-2 focus:ring-[#2f6a54]/20"/></label></div><div className="divide-y divide-[#edf0ed]">{loading&&<p className="p-10 text-center text-[#7b8580]">Cargando el equipo…</p>}{loadError&&<p role="alert" className="p-5 m-4 rounded-xl bg-red-50 text-red-700 text-sm">{loadError}</p>}{!loading&&filtered.map(e=><div key={e.id} className="p-4 sm:px-6 flex flex-wrap items-center gap-4"><Avatar employee={e}/><div className="min-w-[180px] flex-1"><p className="font-semibold">{e.name}</p><p className="text-sm text-[#78827d] mt-1">{e.email}</p></div><div className="w-36"><p className="text-sm font-medium">{e.role}</p><p className="text-xs text-[#89928d] mt-1">{e.department}</p></div><span className={`text-xs font-semibold rounded-full px-3 py-1 ${e.status==='Activo'?'bg-[#e4f0e9] text-[#2d6b50]':'bg-[#fff0e4] text-[#a65128]'}`}>{e.status}</span><span className="text-sm text-[#7f8984] w-16">{e.code}</span><button className="text-sm font-semibold text-[#2f6a54]">Ver ficha</button></div>)}{!loading&&!loadError&&filtered.length===0&&<p className="p-10 text-center text-[#7b8580]">No hay resultados para esa búsqueda.</p>}</div></div></div>
 }
 
-function Schedule() { return <div className="fade-in"><PageTitle eyebrow="Semana 7–13 septiembre" title="Horario del equipo" action={<div className="flex gap-2"><button aria-label="Semana anterior" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronLeft size={18}/></button><button aria-label="Semana siguiente" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronRight size={18}/></button><button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm hidden sm:flex items-center gap-2"><Plus size={17}/>Añadir turno</button></div>}/><div className="card overflow-x-auto"><div className="min-w-[940px]"><div className="grid grid-cols-[180px_repeat(7,1fr)] bg-[#f8f9f7] border-b border-[#e5e9e5]"><div className="p-4 text-sm font-semibold">Empleado</div>{days.map((d,i)=><div key={d} className={`p-4 text-center text-sm font-semibold ${i===0?'text-[#c86231] bg-[#fff7f1]':''}`}>{d}</div>)}</div>{employees.map(e=><div key={e.id} className="grid grid-cols-[180px_repeat(7,1fr)] min-h-24 border-b last:border-0 border-[#edf0ed]"><div className="p-4 flex items-center gap-3"><Avatar employee={e}/><div><p className="text-sm font-semibold">{e.name.split(' ')[0]}</p><p className="text-xs text-[#87908b]">{e.department}</p></div></div>{days.map((_,day)=>{const s=shifts.find(x=>x.employeeId===e.id&&x.day===day);return <div key={day} className={`p-2 border-l border-[#edf0ed] ${day===0?'bg-[#fffaf6]':''}`}>{s&&<div className="h-full rounded-lg bg-[#e5f0e9] border-l-[3px] border-[#3f785f] p-2"><p className="text-xs font-semibold text-[#25533f]">{s.time}</p><p className="text-[11px] text-[#60806f] mt-1">{s.area}</p></div>}</div>})}</div>)}</div></div><div className="mt-4 flex gap-5 text-sm text-[#707b75]"><span><b className="text-[#18211d]">86 h</b> planificadas</span><span><b className="text-[#18211d]">12</b> turnos</span><span className="ml-auto text-[#2f6a54] font-semibold">Horario publicado</span></div></div> }
+type ShiftRow = {
+  id:string; employee_id:string; shift_date:string; start_time:string; end_time:string;
+  departments:{name:string}|null; employees:{id:string;first_name:string;last_name:string}|null
+}
+
+function Schedule() {
+  const [scheduleTeam,setScheduleTeam]=useState(employees)
+  const [scheduleShifts,setScheduleShifts]=useState(shifts)
+  const [loading,setLoading]=useState(Boolean(supabase))
+  const [loadError,setLoadError]=useState('')
+
+  useEffect(()=>{
+    if(!supabase) return
+    let active=true
+    supabase.from('shifts')
+      .select('id, employee_id, shift_date, start_time, end_time, departments(name), employees(id, first_name, last_name)')
+      .gte('shift_date','2026-09-07').lte('shift_date','2026-09-13')
+      .order('shift_date').order('start_time')
+      .then(({data,error})=>{
+        if(!active) return
+        if(error){ setLoadError('No hemos podido cargar los turnos. Revisa los permisos del horario.'); setScheduleTeam([]); setScheduleShifts([]) }
+        else {
+          const rows=(data??[]) as unknown as ShiftRow[]
+          const people=new Map<string,typeof employees[number]>()
+          const colors=['#db7c43','#5e8f78','#71669b','#3c718c']
+          rows.forEach(row=>{
+            if(row.employees&&!people.has(row.employee_id)){
+              const position=people.size
+              people.set(row.employee_id,{
+                id:row.employee_id,
+                name:`${row.employees.first_name} ${row.employees.last_name}`.trim(),
+                initials:`${row.employees.first_name[0]??''}${row.employees.last_name[0]??''}`.toUpperCase(),
+                code:'', role:'', department:row.departments?.name??'Sin departamento', email:'', status:'Activo', color:colors[position%colors.length],
+              })
+            }
+          })
+          setScheduleTeam([...people.values()])
+          setScheduleShifts(rows.map(row=>({
+            employeeId:row.employee_id,
+            day:Math.round((new Date(`${row.shift_date}T12:00:00`).getTime()-new Date('2026-09-07T12:00:00').getTime())/86400000),
+            time:`${row.start_time.slice(0,5)}–${row.end_time.slice(0,5)}`,
+            area:row.departments?.name??'Turno',
+          })))
+        }
+        setLoading(false)
+      })
+    return()=>{active=false}
+  },[])
+
+  const hours=scheduleShifts.reduce((total,shift)=>{
+    const [start,end]=shift.time.split('–').map(value=>{const [h,m]=value.split(':').map(Number);return h+m/60})
+    return total+Math.max(0,end-start)
+  },0)
+
+  return <div className="fade-in"><PageTitle eyebrow="Semana 7–13 septiembre" title="Horario del equipo" action={<div className="flex gap-2"><button aria-label="Semana anterior" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronLeft size={18}/></button><button aria-label="Semana siguiente" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronRight size={18}/></button><button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm hidden sm:flex items-center gap-2"><Plus size={17}/>Añadir turno</button></div>}/>{loadError&&<p role="alert" className="p-5 mb-4 rounded-xl bg-red-50 text-red-700 text-sm">{loadError}</p>}<div className="card overflow-x-auto"><div className="min-w-[940px]"><div className="grid grid-cols-[180px_repeat(7,1fr)] bg-[#f8f9f7] border-b border-[#e5e9e5]"><div className="p-4 text-sm font-semibold">Empleado</div>{days.map((d,i)=><div key={d} className={`p-4 text-center text-sm font-semibold ${i===0?'text-[#c86231] bg-[#fff7f1]':''}`}>{d}</div>)}</div>{loading&&<p className="p-10 text-[#7b8580]">Cargando el horario…</p>}{!loading&&scheduleTeam.map(e=><div key={e.id} className="grid grid-cols-[180px_repeat(7,1fr)] min-h-24 border-b last:border-0 border-[#edf0ed]"><div className="p-4 flex items-center gap-3"><Avatar employee={e}/><div><p className="text-sm font-semibold">{e.name.split(' ')[0]}</p><p className="text-xs text-[#87908b]">{e.department}</p></div></div>{days.map((_,day)=>{const s=scheduleShifts.find(x=>x.employeeId===e.id&&x.day===day);return <div key={day} className={`p-2 border-l border-[#edf0ed] ${day===0?'bg-[#fffaf6]':''}`}>{s&&<div className="h-full rounded-lg bg-[#e5f0e9] border-l-[3px] border-[#3f785f] p-2"><p className="text-xs font-semibold text-[#25533f]">{s.time}</p><p className="text-[11px] text-[#60806f] mt-1">{s.area}</p></div>}</div>})}</div>)}</div></div><div className="mt-4 flex gap-5 text-sm text-[#707b75]"><span><b className="text-[#18211d]">{hours} h</b> planificadas</span><span><b className="text-[#18211d]">{scheduleShifts.length}</b> turnos</span><span className="ml-auto text-[#2f6a54] font-semibold">Horario publicado</span></div></div>
+}
 
 function EmployeeApp() { return <div className="fade-in max-w-5xl mx-auto"><PageTitle eyebrow="Portal del empleado" title="Hola, Carlos"/><div className="grid lg:grid-cols-[.9fr_1.1fr] gap-5"><section className="rounded-[1.5rem] p-6 sm:p-8 bg-[#173c2e] text-white soft-shadow"><p className="text-white/60 text-sm">Turno de hoy</p><p className="text-4xl font-semibold mt-3">10:00–16:00</p><p className="text-white/65 mt-2">Sala · Valencia Centro</p><div className="mt-10 rounded-2xl bg-white/10 p-5 flex items-center justify-between"><div><p className="text-sm text-white/60">Entrada registrada</p><p className="font-semibold mt-1">09:57</p></div><span className="h-11 w-11 rounded-full bg-[#d97840] grid place-items-center"><Check/></span></div><button className="mt-4 w-full h-12 bg-white text-[#173c2e] rounded-xl font-semibold">Finalizar jornada</button></section><section className="card p-6"><h2 className="font-semibold text-lg">Mis próximos turnos</h2><div className="mt-4 divide-y divide-[#edf0ed]">{[['Mié 9','18:00–00:00'],['Vie 11','12:00–18:00'],['Lun 14','10:00–16:00']].map(([d,t])=><div key={d} className="py-4 flex items-center"><span className="h-11 w-14 rounded-xl bg-[#fff0e5] text-[#b85828] grid place-items-center text-sm font-bold">{d}</span><div className="ml-4"><p className="font-semibold">{t}</p><p className="text-sm text-[#7c8681]">Sala</p></div><ChevronRight className="ml-auto text-[#9ba39f]" size={18}/></div>)}</div><button className="mt-4 w-full rounded-xl bg-[#f0f3f0] h-11 font-semibold text-sm text-[#315c49]">Ver mi horario completo</button></section></div><div className="grid sm:grid-cols-2 gap-5 mt-5"><button className="card p-5 text-left hover:border-[#98afa3]"><CalendarDays className="text-[#d16d38]"/><p className="font-semibold mt-4">Solicitar vacaciones</p><p className="text-sm text-[#79837e] mt-1">Envía una nueva solicitud</p></button><button className="card p-5 text-left hover:border-[#98afa3]"><Clock3 className="text-[#4c7a65]"/><p className="font-semibold mt-4">Cambiar un turno</p><p className="text-sm text-[#79837e] mt-1">Propón un cambio al equipo</p></button></div></div> }
 

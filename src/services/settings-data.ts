@@ -43,7 +43,7 @@ export async function getCompanyMembers(): Promise<CompanyMemberRecord[]> {
   if (!supabase) return []
   const { data: members, error } = await supabase
     .from('company_members')
-    .select('id,company_id,user_id,role_id,active,roles(id,code,name,description)')
+    .select('id,company_id,user_id,role_id,roles(id,code,name,description)')
     .order('created_at')
   if (error) throw error
   const userIds = (members ?? []).map(member => member.user_id)
@@ -56,13 +56,13 @@ export async function getCompanyMembers(): Promise<CompanyMemberRecord[]> {
     company_id: member.company_id,
     user_id: member.user_id,
     role_id: member.role_id,
-    active: member.active,
+    active: true,
     role: (Array.isArray(member.roles) ? member.roles[0] : member.roles) as RoleRecord | null,
     profile: profiles?.find(profile => profile.id === member.user_id) ?? null,
   }))
 }
 
-export async function updateCompanyMember(id: string, values: { role_id: string; active: boolean }) {
+export async function updateCompanyMember(id: string, values: { role_id: string }) {
   if (!supabase) throw new Error('Supabase no está configurado')
   const { error } = await supabase.from('company_members').update(values).eq('id', id)
   if (error) throw error

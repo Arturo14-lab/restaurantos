@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ArrowRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, Clock3, LayoutDashboard, LogOut, Menu, Plus, Search, Users, UtensilsCrossed, X } from 'lucide-react'
 import { employees, shifts } from './data/demo'
@@ -81,7 +81,49 @@ function Dashboard() { return <div className="fade-in"><PageTitle eyebrow="Lunes
   <section className="card p-5 sm:p-6"><h2 className="font-semibold text-lg">Necesita atención</h2><div className="mt-5 rounded-xl bg-[#fff5ed] p-4 border border-[#f5ddca]"><span className="text-xs font-semibold text-[#bc5c2c]">VACACIONES</span><p className="font-medium mt-2">Solicitud de Laura</p><p className="text-sm text-[#756b65] mt-1">21–25 de septiembre</p><button className="mt-4 text-sm font-semibold text-[#9e4a22]">Revisar solicitud →</button></div><div className="mt-3 rounded-xl bg-[#eef3ef] p-4"><span className="text-xs font-semibold text-[#3a6653]">CAMBIO DE TURNO</span><p className="font-medium mt-2">Carlos solicita un cambio</p><p className="text-sm text-[#68736d] mt-1">Miércoles, turno de tarde</p></div></section></div></div> }
 
 function Avatar({employee}:{employee:typeof employees[number]}) { return <span style={{background:employee.color}} className="h-10 w-10 shrink-0 rounded-full text-white grid place-items-center text-sm font-semibold">{employee.initials}</span> }
-function Employees() { const [q,setQ]=useState(''); const filtered=employees.filter(e=>(e.name+e.role+e.department).toLowerCase().includes(q.toLowerCase())); return <div className="fade-in"><PageTitle eyebrow="Personal" title="Equipo" action={<button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm flex items-center gap-2"><Plus size={17}/>Añadir empleado</button>}/><div className="card overflow-hidden"><div className="p-4 border-b border-[#e7ebe7]"><label className="relative block max-w-sm"><Search className="absolute left-3 top-3 text-[#87908b]" size={18}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar en el equipo…" className="h-11 w-full pl-10 pr-4 rounded-xl bg-[#f4f6f2] outline-none focus:ring-2 focus:ring-[#2f6a54]/20"/></label></div><div className="divide-y divide-[#edf0ed]">{filtered.map(e=><div key={e.id} className="p-4 sm:px-6 flex flex-wrap items-center gap-4"><Avatar employee={e}/><div className="min-w-[180px] flex-1"><p className="font-semibold">{e.name}</p><p className="text-sm text-[#78827d] mt-1">{e.email}</p></div><div className="w-36"><p className="text-sm font-medium">{e.role}</p><p className="text-xs text-[#89928d] mt-1">{e.department}</p></div><span className={`text-xs font-semibold rounded-full px-3 py-1 ${e.status==='Activo'?'bg-[#e4f0e9] text-[#2d6b50]':'bg-[#fff0e4] text-[#a65128]'}`}>{e.status}</span><span className="text-sm text-[#7f8984] w-16">{e.code}</span><button className="text-sm font-semibold text-[#2f6a54]">Ver ficha</button></div>)}{filtered.length===0&&<p className="p-10 text-center text-[#7b8580]">No hay resultados para esa búsqueda.</p>}</div></div></div> }
+type EmployeeRow = {
+  id: string; employee_code: string | null; first_name: string; last_name: string;
+  email: string | null; status: string; departments: { name: string } | null;
+  positions: { name: string } | null
+}
+
+function Employees() {
+  const [q,setQ]=useState('')
+  const [team,setTeam]=useState(employees)
+  const [loading,setLoading]=useState(Boolean(supabase))
+  const [loadError,setLoadError]=useState('')
+
+  useEffect(()=>{
+    if(!supabase) return
+    let active=true
+    supabase.from('employees')
+      .select('id, employee_code, first_name, last_name, email, status, departments(name), positions(name)')
+      .order('first_name')
+      .then(({data,error})=>{
+        if(!active) return
+        if(error){ setLoadError('No hemos podido cargar el equipo. Revisa los permisos del usuario.'); setTeam([]) }
+        else {
+          const colors=['#db7c43','#5e8f78','#71669b','#3c718c']
+          setTeam(((data ?? []) as unknown as EmployeeRow[]).map((row,index)=>({
+            id:row.id,
+            name:`${row.first_name} ${row.last_name}`.trim(),
+            initials:`${row.first_name[0] ?? ''}${row.last_name[0] ?? ''}`.toUpperCase(),
+            code:row.employee_code ?? '—',
+            role:row.positions?.name ?? 'Sin puesto',
+            department:row.departments?.name ?? 'Sin departamento',
+            email:row.email ?? 'Sin correo',
+            status:row.status==='active' ? 'Activo' : 'Ausente',
+            color:colors[index%colors.length],
+          })))
+        }
+        setLoading(false)
+      })
+    return()=>{active=false}
+  },[])
+
+  const filtered=team.filter(e=>(e.name+e.role+e.department).toLowerCase().includes(q.toLowerCase()))
+  return <div className="fade-in"><PageTitle eyebrow="Personal" title="Equipo" action={<button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm flex items-center gap-2"><Plus size={17}/>Añadir empleado</button>}/><div className="card overflow-hidden"><div className="p-4 border-b border-[#e7ebe7]"><label className="relative block max-w-sm"><Search className="absolute left-3 top-3 text-[#87908b]" size={18}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar en el equipo…" className="h-11 w-full pl-10 pr-4 rounded-xl bg-[#f4f6f2] outline-none focus:ring-2 focus:ring-[#2f6a54]/20"/></label></div><div className="divide-y divide-[#edf0ed]">{loading&&<p className="p-10 text-center text-[#7b8580]">Cargando el equipo…</p>}{loadError&&<p role="alert" className="p-5 m-4 rounded-xl bg-red-50 text-red-700 text-sm">{loadError}</p>}{!loading&&filtered.map(e=><div key={e.id} className="p-4 sm:px-6 flex flex-wrap items-center gap-4"><Avatar employee={e}/><div className="min-w-[180px] flex-1"><p className="font-semibold">{e.name}</p><p className="text-sm text-[#78827d] mt-1">{e.email}</p></div><div className="w-36"><p className="text-sm font-medium">{e.role}</p><p className="text-xs text-[#89928d] mt-1">{e.department}</p></div><span className={`text-xs font-semibold rounded-full px-3 py-1 ${e.status==='Activo'?'bg-[#e4f0e9] text-[#2d6b50]':'bg-[#fff0e4] text-[#a65128]'}`}>{e.status}</span><span className="text-sm text-[#7f8984] w-16">{e.code}</span><button className="text-sm font-semibold text-[#2f6a54]">Ver ficha</button></div>)}{!loading&&!loadError&&filtered.length===0&&<p className="p-10 text-center text-[#7b8580]">No hay resultados para esa búsqueda.</p>}</div></div></div>
+}
 
 function Schedule() { return <div className="fade-in"><PageTitle eyebrow="Semana 7–13 septiembre" title="Horario del equipo" action={<div className="flex gap-2"><button aria-label="Semana anterior" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronLeft size={18}/></button><button aria-label="Semana siguiente" className="h-11 w-11 rounded-xl border bg-white grid place-items-center"><ChevronRight size={18}/></button><button className="h-11 px-4 rounded-xl bg-[#173c2e] text-white font-semibold text-sm hidden sm:flex items-center gap-2"><Plus size={17}/>Añadir turno</button></div>}/><div className="card overflow-x-auto"><div className="min-w-[940px]"><div className="grid grid-cols-[180px_repeat(7,1fr)] bg-[#f8f9f7] border-b border-[#e5e9e5]"><div className="p-4 text-sm font-semibold">Empleado</div>{days.map((d,i)=><div key={d} className={`p-4 text-center text-sm font-semibold ${i===0?'text-[#c86231] bg-[#fff7f1]':''}`}>{d}</div>)}</div>{employees.map(e=><div key={e.id} className="grid grid-cols-[180px_repeat(7,1fr)] min-h-24 border-b last:border-0 border-[#edf0ed]"><div className="p-4 flex items-center gap-3"><Avatar employee={e}/><div><p className="text-sm font-semibold">{e.name.split(' ')[0]}</p><p className="text-xs text-[#87908b]">{e.department}</p></div></div>{days.map((_,day)=>{const s=shifts.find(x=>x.employeeId===e.id&&x.day===day);return <div key={day} className={`p-2 border-l border-[#edf0ed] ${day===0?'bg-[#fffaf6]':''}`}>{s&&<div className="h-full rounded-lg bg-[#e5f0e9] border-l-[3px] border-[#3f785f] p-2"><p className="text-xs font-semibold text-[#25533f]">{s.time}</p><p className="text-[11px] text-[#60806f] mt-1">{s.area}</p></div>}</div>})}</div>)}</div></div><div className="mt-4 flex gap-5 text-sm text-[#707b75]"><span><b className="text-[#18211d]">86 h</b> planificadas</span><span><b className="text-[#18211d]">12</b> turnos</span><span className="ml-auto text-[#2f6a54] font-semibold">Horario publicado</span></div></div> }
 

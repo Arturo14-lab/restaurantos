@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18211d; background: #f4f6f2; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.soft-shadow { box-shadow: 0 18px 50px rgba(19, 45, 35, .08); }
+.card { border: 1px solid #e3e8e2; background: rgba(255,255,255,.94); border-radius: 1.25rem; }
+.fade-in { animation: fade .25s ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(5px) } to { opacity: 1; transform: none } }
+@media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }

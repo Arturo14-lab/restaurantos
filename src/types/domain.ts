@@ -53,3 +53,25 @@ export type RestaurantRecord = {
   email: string | null
   active: boolean
 }
+
+export type RoleRecord = {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
+export type CompanyMemberRecord = {
+  id: string
+  company_id: string
+  user_id: string
+  role_id: string
+  active: boolean
+  role: RoleRecord | null
+  profile: {
+    first_name: string | null
+    last_name: string | null
+    phone: string | null
+    avatar_url: string | null
+  } | null
+}

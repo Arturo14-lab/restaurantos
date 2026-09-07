@@ -16,6 +16,7 @@ import { ScheduleManagement } from './features/schedule/ScheduleManagement'
 import { TimeTracking } from './features/schedule/TimeTracking'
 import { ActionCenter } from './features/schedule/ActionCenter'
 import { EmployeePortal } from './features/employee/EmployeePortal'
+import { OperationsHub } from './features/operations/OperationsHub'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -194,7 +195,7 @@ export default function App() {
     <Route path="/acciones" element={<ActionCenter/>}/>
     <Route path="/empleados" element={<EmployeesManagement/>}/><Route path="/horarios" element={<ScheduleManagement/>}/>
     <Route path="/fichajes" element={<TimeTracking/>}/>
-    <Route path="/operaciones" element={<ModulePlaceholder icon={Wrench} eyebrow="Gestión" title="Operaciones" description="La actividad diaria del local, desde la apertura hasta el mantenimiento preventivo." items={['Tareas recurrentes','Apertura y cierre','Incidencias','Equipos y mantenimiento']}/>}/>
+    <Route path="/operaciones" element={<OperationsHub/>}/>
     <Route path="/compras" element={<ModulePlaceholder icon={ShoppingCart} eyebrow="Gestión" title="Compras" description="Proveedores, pedidos, tickets y facturas conectados con costes e inventario." items={['Bandeja de documentos','Proveedores','Pedidos y recepciones','Facturas y aprobaciones']}/>}/>
     <Route path="/inventario" element={<ModulePlaceholder icon={Boxes} eyebrow="Gestión" title="Inventario" description="Control de producto por ubicación con trazabilidad completa de cada movimiento." items={['Productos y unidades','Stock por almacén','Inventarios','Movimientos y mermas']}/>}/>
     <Route path="/rentabilidad" element={<ModulePlaceholder icon={BarChart3} eyebrow="Análisis" title="Rentabilidad" description="Costes, recetas y resultados convertidos en información útil para tomar decisiones." items={['Recetas y escandallos','Gastos','Coste laboral','Resultado operativo']}/>}/>

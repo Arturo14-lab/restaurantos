@@ -27,3 +27,29 @@ export type DashboardMetrics = {
   entries: number
   today: number
 }
+
+export type CompanyRecord = {
+  id: string
+  name: string
+  legal_name: string | null
+  tax_id: string | null
+  phone: string | null
+  email: string | null
+  logo_url: string | null
+  currency: string
+  timezone: string
+  active: boolean
+}
+
+export type RestaurantRecord = {
+  id: string
+  company_id: string
+  name: string
+  address: string | null
+  city: string | null
+  postal_code: string | null
+  country: string | null
+  phone: string | null
+  email: string | null
+  active: boolean
+}

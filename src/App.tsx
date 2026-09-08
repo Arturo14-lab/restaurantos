@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
-import { ArrowRight, BarChart3, Bell, Boxes, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, ClipboardCheck, Clock3, ContactRound, LayoutDashboard, ListTodo, LogOut, Menu, Plus, Search, Settings, ShoppingCart, Users, UtensilsCrossed, Wrench, X } from 'lucide-react'
+import { ArrowRight, Banknote, BarChart3, Bell, Boxes, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, ClipboardCheck, Clock3, ContactRound, LayoutDashboard, ListTodo, LogOut, Menu, Plus, Search, Settings, ShoppingCart, Users, UtensilsCrossed, Wrench, X } from 'lucide-react'
 import { employees, shifts } from './data/demo'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getDashboardMetrics, getEmployees, getWeekShifts } from './services/restaurant-data'
@@ -21,6 +21,7 @@ import { PurchasesHub } from './features/purchases/PurchasesHub'
 import { InventoryHub } from './features/inventory/InventoryHub'
 import { ProfitabilityHub } from './features/profitability/ProfitabilityHub'
 import { CommercialHub } from './features/commercial/CommercialHub'
+import { CashHub } from './features/cash/CashHub'
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -73,7 +74,7 @@ function Shell({ children, onLogout }: { children: ReactNode; onLogout: () => vo
   const groups = [
     { label:'General', links:[['/',LayoutDashboard,'Dashboard'],['/acciones',ListTodo,'Centro de acciones']] },
     { label:'Personal', links:[['/empleados',Users,'Empleados'],['/horarios',CalendarDays,'Horarios'],['/fichajes',Clock3,'Fichajes']] },
-    { label:'Gestión', links:[['/operaciones',ClipboardCheck,'Operaciones'],['/compras',ShoppingCart,'Compras'],['/inventario',Boxes,'Inventario'],['/rentabilidad',BarChart3,'Rentabilidad'],['/clientes',ContactRound,'Clientes y reservas']] },
+    { label:'Gestión', links:[['/operaciones',ClipboardCheck,'Operaciones'],['/compras',ShoppingCart,'Compras'],['/inventario',Boxes,'Inventario'],['/rentabilidad',BarChart3,'Rentabilidad'],['/clientes',ContactRound,'Clientes y reservas'],['/caja',Banknote,'Caja y cierres']] },
     { label:'Cuenta', links:[['/configuracion',Settings,'Configuración'],['/mi-app',CircleUserRound,'App empleado']] },
   ] as const
   return <div className="min-h-screen bg-[#f4f6f2] lg:grid lg:grid-cols-[250px_1fr]">
@@ -204,6 +205,7 @@ export default function App() {
     <Route path="/inventario" element={<InventoryHub/>}/>
     <Route path="/rentabilidad" element={<ProfitabilityHub/>}/>
     <Route path="/clientes" element={<CommercialHub/>}/>
+    <Route path="/caja" element={<CashHub/>}/>
     <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeePortal/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Shell>

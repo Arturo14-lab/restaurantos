@@ -1,30 +1,29 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Component, Suspense, lazy, useEffect, useState, type ErrorInfo, type FormEvent, type ReactNode } from 'react'
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ArrowRight, Banknote, BarChart3, Bell, Boxes, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, ClipboardCheck, Clock3, CloudCog, ContactRound, FileText, LayoutDashboard, ListTodo, LockKeyhole, LogOut, Menu, Plus, Search, Settings, ShoppingCart, Users, UtensilsCrossed, Wrench, X } from 'lucide-react'
 import { employees, shifts } from './data/demo'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getDashboardMetrics, getEmployees, getWeekShifts } from './services/restaurant-data'
-import { ModulePlaceholder } from './features/shared/ModulePlaceholder'
-import { SettingsHome } from './features/settings/SettingsHome'
-import { CompanySettings } from './features/settings/CompanySettings'
-import { RestaurantsSettings } from './features/settings/RestaurantsSettings'
-import { UsersSettings } from './features/settings/UsersSettings'
-import { RolesSettings } from './features/settings/RolesSettings'
-import { CatalogsSettings } from './features/settings/CatalogsSettings'
-import { EmployeesManagement } from './features/people/EmployeesManagement'
-import { ScheduleManagement } from './features/schedule/ScheduleManagement'
-import { TimeTracking } from './features/schedule/TimeTracking'
-import { ActionCenter } from './features/schedule/ActionCenter'
-import { EmployeePortal } from './features/employee/EmployeePortal'
-import { OperationsHub } from './features/operations/OperationsHub'
-import { PurchasesHub } from './features/purchases/PurchasesHub'
-import { InventoryHub } from './features/inventory/InventoryHub'
-import { ProfitabilityHub } from './features/profitability/ProfitabilityHub'
-import { CommercialHub } from './features/commercial/CommercialHub'
-import { CashHub } from './features/cash/CashHub'
-import { BillingHub } from './features/billing/BillingHub'
-import { IntegrationsHub } from './features/integrations/IntegrationsHub'
-import { SecurityHub } from './features/security/SecurityHub'
+const SettingsHome=lazy(()=>import('./features/settings/SettingsHome').then(m=>({default:m.SettingsHome})))
+const CompanySettings=lazy(()=>import('./features/settings/CompanySettings').then(m=>({default:m.CompanySettings})))
+const RestaurantsSettings=lazy(()=>import('./features/settings/RestaurantsSettings').then(m=>({default:m.RestaurantsSettings})))
+const UsersSettings=lazy(()=>import('./features/settings/UsersSettings').then(m=>({default:m.UsersSettings})))
+const RolesSettings=lazy(()=>import('./features/settings/RolesSettings').then(m=>({default:m.RolesSettings})))
+const CatalogsSettings=lazy(()=>import('./features/settings/CatalogsSettings').then(m=>({default:m.CatalogsSettings})))
+const EmployeesManagement=lazy(()=>import('./features/people/EmployeesManagement').then(m=>({default:m.EmployeesManagement})))
+const ScheduleManagement=lazy(()=>import('./features/schedule/ScheduleManagement').then(m=>({default:m.ScheduleManagement})))
+const TimeTracking=lazy(()=>import('./features/schedule/TimeTracking').then(m=>({default:m.TimeTracking})))
+const ActionCenter=lazy(()=>import('./features/schedule/ActionCenter').then(m=>({default:m.ActionCenter})))
+const EmployeePortal=lazy(()=>import('./features/employee/EmployeePortal').then(m=>({default:m.EmployeePortal})))
+const OperationsHub=lazy(()=>import('./features/operations/OperationsHub').then(m=>({default:m.OperationsHub})))
+const PurchasesHub=lazy(()=>import('./features/purchases/PurchasesHub').then(m=>({default:m.PurchasesHub})))
+const InventoryHub=lazy(()=>import('./features/inventory/InventoryHub').then(m=>({default:m.InventoryHub})))
+const ProfitabilityHub=lazy(()=>import('./features/profitability/ProfitabilityHub').then(m=>({default:m.ProfitabilityHub})))
+const CommercialHub=lazy(()=>import('./features/commercial/CommercialHub').then(m=>({default:m.CommercialHub})))
+const CashHub=lazy(()=>import('./features/cash/CashHub').then(m=>({default:m.CashHub})))
+const BillingHub=lazy(()=>import('./features/billing/BillingHub').then(m=>({default:m.BillingHub})))
+const IntegrationsHub=lazy(()=>import('./features/integrations/IntegrationsHub').then(m=>({default:m.IntegrationsHub})))
+const SecurityHub=lazy(()=>import('./features/security/SecurityHub').then(m=>({default:m.SecurityHub})))
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -192,13 +191,16 @@ function Schedule() {
 
 function EmployeeApp() { return <div className="fade-in max-w-5xl mx-auto"><PageTitle eyebrow="Portal del empleado" title="Hola, Carlos"/><div className="grid lg:grid-cols-[.9fr_1.1fr] gap-5"><section className="rounded-[1.5rem] p-6 sm:p-8 bg-[#173c2e] text-white soft-shadow"><p className="text-white/60 text-sm">Turno de hoy</p><p className="text-4xl font-semibold mt-3">10:00–16:00</p><p className="text-white/65 mt-2">Sala · Valencia Centro</p><div className="mt-10 rounded-2xl bg-white/10 p-5 flex items-center justify-between"><div><p className="text-sm text-white/60">Entrada registrada</p><p className="font-semibold mt-1">09:57</p></div><span className="h-11 w-11 rounded-full bg-[#d97840] grid place-items-center"><Check/></span></div><button className="mt-4 w-full h-12 bg-white text-[#173c2e] rounded-xl font-semibold">Finalizar jornada</button></section><section className="card p-6"><h2 className="font-semibold text-lg">Mis próximos turnos</h2><div className="mt-4 divide-y divide-[#edf0ed]">{[['Mié 9','18:00–00:00'],['Vie 11','12:00–18:00'],['Lun 14','10:00–16:00']].map(([d,t])=><div key={d} className="py-4 flex items-center"><span className="h-11 w-14 rounded-xl bg-[#fff0e5] text-[#b85828] grid place-items-center text-sm font-bold">{d}</span><div className="ml-4"><p className="font-semibold">{t}</p><p className="text-sm text-[#7c8681]">Sala</p></div><ChevronRight className="ml-auto text-[#9ba39f]" size={18}/></div>)}</div><button className="mt-4 w-full rounded-xl bg-[#f0f3f0] h-11 font-semibold text-sm text-[#315c49]">Ver mi horario completo</button></section></div><div className="grid sm:grid-cols-2 gap-5 mt-5"><button className="card p-5 text-left hover:border-[#98afa3]"><CalendarDays className="text-[#d16d38]"/><p className="font-semibold mt-4">Solicitar vacaciones</p><p className="text-sm text-[#79837e] mt-1">Envía una nueva solicitud</p></button><button className="card p-5 text-left hover:border-[#98afa3]"><Clock3 className="text-[#4c7a65]"/><p className="font-semibold mt-4">Cambiar un turno</p><p className="text-sm text-[#79837e] mt-1">Propón un cambio al equipo</p></button></div></div> }
 
+function ModuleLoading(){return <div className="min-h-[45vh] grid place-items-center" role="status"><div className="text-center"><span className="mx-auto block h-9 w-9 rounded-full border-4 border-[#d8e2dc] border-t-[#2f6a54] animate-spin"/><p className="text-sm text-[#6e7873] mt-4">Cargando módulo…</p></div></div>}
+class AppErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return{failed:true}}componentDidCatch(error:Error,info:ErrorInfo){console.error('RestaurantOS module error',error,info)}render(){if(this.state.failed)return <div className="card max-w-xl mx-auto p-8 text-center"><span className="h-12 w-12 rounded-xl bg-[#fff0e5] text-[#bd622f] grid place-items-center mx-auto"><Wrench/></span><h2 className="text-xl font-semibold mt-5">No hemos podido abrir este módulo</h2><p className="text-sm text-[#6e7873] mt-2">Recarga la página. Si continúa, vuelve al Dashboard y revisaremos el problema sin perder datos.</p><div className="flex justify-center gap-3 mt-6"><button onClick={()=>location.reload()} className="rounded-xl bg-[#173c2e] text-white px-4 py-2.5 font-semibold text-sm">Recargar</button><a href="/" className="rounded-xl border px-4 py-2.5 font-semibold text-sm">Ir al Dashboard</a></div></div>;return this.props.children}}
+
 export default function App() {
   const [loggedIn,setLoggedIn]=useState(()=>sessionStorage.getItem('restaurantos-session')==='true')
   const nav=useNavigate()
   const login=()=>{sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true);nav('/')}
   const logout=async()=>{if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('restaurantos-session');setLoggedIn(false);nav('/login')}
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
-  return <Shell onLogout={logout}><Routes>
+  return <Shell onLogout={logout}><AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes>
     <Route path="/" element={<Dashboard/>}/>
     <Route path="/acciones" element={<ActionCenter/>}/>
     <Route path="/empleados" element={<EmployeesManagement/>}/><Route path="/horarios" element={<ScheduleManagement/>}/>
@@ -214,5 +216,5 @@ export default function App() {
     <Route path="/seguridad" element={<SecurityHub/>}/>
     <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeePortal/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
-  </Routes></Shell>
+  </Routes></Suspense></AppErrorBoundary></Shell>
 }

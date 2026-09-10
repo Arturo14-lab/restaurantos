@@ -25,6 +25,7 @@ const CashHub=lazy(()=>import('./features/cash/CashHub').then(m=>({default:m.Cas
 const BillingHub=lazy(()=>import('./features/billing/BillingHub').then(m=>({default:m.BillingHub})))
 const IntegrationsHub=lazy(()=>import('./features/integrations/IntegrationsHub').then(m=>({default:m.IntegrationsHub})))
 const SecurityHub=lazy(()=>import('./features/security/SecurityHub').then(m=>({default:m.SecurityHub})))
+const OnboardingWizard=lazy(()=>import('./features/onboarding/OnboardingWizard').then(m=>({default:m.OnboardingWizard})))
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -202,10 +203,12 @@ export default function App() {
   const [access,setAccess]=useState<AccessProfile|null>(null)
   const nav=useNavigate()
   useEffect(()=>{if(!loggedIn)return;let active=true;getCurrentAccess().then(value=>{if(active)setAccess(value)}).catch(()=>{if(active)setAccess(null)});return()=>{active=false}},[loggedIn])
+  useEffect(()=>{if(access?.roleName==='Sin rol')nav('/inicio')},[access,nav])
   const login=()=>{sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true);nav('/')}
   const logout=async()=>{if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('restaurantos-session');setLoggedIn(false);nav('/login')}
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
   const guard=(module:string,children:ReactNode)=><ModuleGuard access={access} module={module}>{children}</ModuleGuard>
+  if(access?.roleName==='Sin rol')return <AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes><Route path="*" element={<OnboardingWizard/>}/></Routes></Suspense></AppErrorBoundary>
   return <Shell onLogout={logout} access={access}><AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes>
     <Route path="/" element={guard('dashboard',<Dashboard/>)}/>
     <Route path="/acciones" element={guard('operations',<ActionCenter/>)}/>

@@ -4,6 +4,7 @@ import { ArrowRight, Banknote, BarChart3, Bell, Boxes, CalendarDays, Check, Chev
 import { employees, shifts } from './data/demo'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getDashboardMetrics, getEmployees, getWeekShifts } from './services/restaurant-data'
+import { getCurrentAccess, type AccessProfile } from './services/access-control'
 const SettingsHome=lazy(()=>import('./features/settings/SettingsHome').then(m=>({default:m.SettingsHome})))
 const CompanySettings=lazy(()=>import('./features/settings/CompanySettings').then(m=>({default:m.CompanySettings})))
 const RestaurantsSettings=lazy(()=>import('./features/settings/RestaurantsSettings').then(m=>({default:m.RestaurantsSettings})))
@@ -71,26 +72,27 @@ function Login({ onLogin }: { onLogin: () => void }) {
 
 function Logo({ light=false }: { light?: boolean }) { return <div className={`flex items-center gap-3 font-semibold text-lg ${light?'text-white':'text-[#173c2e]'}`}><span className="h-10 w-10 rounded-xl bg-[#d97840] text-white grid place-items-center"><UtensilsCrossed size={20}/></span>RestaurantOS</div> }
 
-function Shell({ children, onLogout }: { children: ReactNode; onLogout: () => void }) {
+function Shell({ children, onLogout, access }: { children: ReactNode; onLogout: () => void; access:AccessProfile|null }) {
   const [open, setOpen] = useState(false)
   const groups = [
-    { label:'General', links:[['/',LayoutDashboard,'Dashboard'],['/acciones',ListTodo,'Centro de acciones']] },
-    { label:'Personal', links:[['/empleados',Users,'Empleados'],['/horarios',CalendarDays,'Horarios'],['/fichajes',Clock3,'Fichajes']] },
-    { label:'Gestión', links:[['/operaciones',ClipboardCheck,'Operaciones'],['/compras',ShoppingCart,'Compras'],['/inventario',Boxes,'Inventario'],['/rentabilidad',BarChart3,'Rentabilidad'],['/clientes',ContactRound,'Clientes y reservas'],['/caja',Banknote,'Caja y cierres'],['/facturacion',FileText,'Facturación']] },
-    { label:'Cuenta', links:[['/integraciones',CloudCog,'Integraciones'],['/seguridad',LockKeyhole,'Seguridad'],['/configuracion',Settings,'Configuración'],['/mi-app',CircleUserRound,'App empleado']] },
+    { label:'General', links:[['/',LayoutDashboard,'Dashboard','dashboard'],['/acciones',ListTodo,'Centro de acciones','operations']] },
+    { label:'Personal', links:[['/empleados',Users,'Empleados','people'],['/horarios',CalendarDays,'Horarios','schedule'],['/fichajes',Clock3,'Fichajes','schedule']] },
+    { label:'Gestión', links:[['/operaciones',ClipboardCheck,'Operaciones','operations'],['/compras',ShoppingCart,'Compras','purchases'],['/inventario',Boxes,'Inventario','inventory'],['/rentabilidad',BarChart3,'Rentabilidad','profitability'],['/clientes',ContactRound,'Clientes y reservas','customers'],['/caja',Banknote,'Caja y cierres','cash'],['/facturacion',FileText,'Facturación','billing']] },
+    { label:'Cuenta', links:[['/integraciones',CloudCog,'Integraciones','integrations'],['/seguridad',LockKeyhole,'Seguridad','settings'],['/configuracion',Settings,'Configuración','settings'],['/mi-app',CircleUserRound,'App empleado','schedule']] },
   ] as const
+  const can=(module:string)=>!access?.allowedModules||access.allowedModules.has(module)
   return <div className="min-h-screen bg-[#f4f6f2] lg:grid lg:grid-cols-[250px_1fr]">
     {open && <button aria-label="Cerrar menú" onClick={()=>setOpen(false)} className="fixed inset-0 bg-black/30 z-30 lg:hidden" />}
     <aside className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-[250px] bg-[#102820] text-white px-4 py-6 flex flex-col transition-transform ${open?'translate-x-0':'-translate-x-full lg:translate-x-0'}`}>
       <div className="px-3 flex justify-between items-center"><Logo light/><button onClick={()=>setOpen(false)} className="lg:hidden text-white/60"><X/></button></div>
       <div className="mt-10 px-3"><p className="text-[12px] uppercase tracking-widest text-white/40">Restaurante</p><p className="font-medium mt-2">Valencia Centro</p></div>
-      <nav className="mt-7 space-y-5 overflow-y-auto pr-1">{groups.map(group=><div key={group.label}><p className="px-3 mb-1 text-[11px] uppercase tracking-[.16em] text-white/30">{group.label}</p>{group.links.map(([to,Icon,label])=><NavLink key={to} end={to==='/'} to={to} onClick={()=>setOpen(false)} className={({isActive})=>`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${isActive?'bg-white/12 text-white':'text-white/58 hover:bg-white/7 hover:text-white'}`}><Icon size={18}/>{label}</NavLink>)}</div>)}</nav>
+      <nav className="mt-7 space-y-5 overflow-y-auto pr-1">{groups.map(group=>{const visible=group.links.filter(link=>can(link[3]));return visible.length?<div key={group.label}><p className="px-3 mb-1 text-[11px] uppercase tracking-[.16em] text-white/30">{group.label}</p>{visible.map(([to,Icon,label])=><NavLink key={to} end={to==='/'} to={to} onClick={()=>setOpen(false)} className={({isActive})=>`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${isActive?'bg-white/12 text-white':'text-white/58 hover:bg-white/7 hover:text-white'}`}><Icon size={18}/>{label}</NavLink>)}</div>:null})}</nav>
       <button onClick={onLogout} className="mt-auto flex items-center gap-3 px-3 py-3 text-sm text-white/55 hover:text-white"><LogOut size={18}/>Cerrar sesión</button>
     </aside>
     <div className="min-w-0">
       <header className="h-18 bg-white/80 backdrop-blur border-b border-[#e5e9e5] flex items-center px-5 lg:px-8 sticky top-0 z-20">
         <button aria-label="Abrir menú" onClick={()=>setOpen(true)} className="lg:hidden mr-4"><Menu/></button>
-        <div className="ml-auto flex items-center gap-3"><button aria-label="Notificaciones" className="w-10 h-10 grid place-items-center rounded-full hover:bg-[#edf1ed] relative"><Bell size={19}/><i className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#d97840]"/></button><div className="h-9 w-9 rounded-full bg-[#d97840] text-white grid place-items-center text-sm font-semibold">LM</div><div className="hidden sm:block"><p className="text-sm font-semibold leading-none">Lucía Martín</p><p className="text-xs text-[#7a847f] mt-1">Administradora</p></div></div>
+        <div className="ml-auto flex items-center gap-3"><button aria-label="Notificaciones" className="w-10 h-10 grid place-items-center rounded-full hover:bg-[#edf1ed] relative"><Bell size={19}/><i className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#d97840]"/></button><div className="h-9 w-9 rounded-full bg-[#d97840] text-white grid place-items-center text-sm font-semibold">AR</div><div className="hidden sm:block"><p className="text-sm font-semibold leading-none">Arturo</p><p className="text-xs text-[#7a847f] mt-1">{access?.roleName??'Cargando acceso…'}</p></div></div>
       </header>
       <div className="p-5 sm:p-8 xl:p-10 max-w-[1500px] mx-auto">{children}</div>
     </div>
@@ -193,28 +195,32 @@ function EmployeeApp() { return <div className="fade-in max-w-5xl mx-auto"><Page
 
 function ModuleLoading(){return <div className="min-h-[45vh] grid place-items-center" role="status"><div className="text-center"><span className="mx-auto block h-9 w-9 rounded-full border-4 border-[#d8e2dc] border-t-[#2f6a54] animate-spin"/><p className="text-sm text-[#6e7873] mt-4">Cargando módulo…</p></div></div>}
 class AppErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return{failed:true}}componentDidCatch(error:Error,info:ErrorInfo){console.error('RestaurantOS module error',error,info)}render(){if(this.state.failed)return <div className="card max-w-xl mx-auto p-8 text-center"><span className="h-12 w-12 rounded-xl bg-[#fff0e5] text-[#bd622f] grid place-items-center mx-auto"><Wrench/></span><h2 className="text-xl font-semibold mt-5">No hemos podido abrir este módulo</h2><p className="text-sm text-[#6e7873] mt-2">Recarga la página. Si continúa, vuelve al Dashboard y revisaremos el problema sin perder datos.</p><div className="flex justify-center gap-3 mt-6"><button onClick={()=>location.reload()} className="rounded-xl bg-[#173c2e] text-white px-4 py-2.5 font-semibold text-sm">Recargar</button><a href="/" className="rounded-xl border px-4 py-2.5 font-semibold text-sm">Ir al Dashboard</a></div></div>;return this.props.children}}
+function ModuleGuard({access,module,children}:{access:AccessProfile|null;module:string;children:ReactNode}){if(access?.allowedModules&&!access.allowedModules.has(module))return <div className="card max-w-xl mx-auto p-8 text-center"><span className="h-12 w-12 rounded-xl bg-[#fff0e5] text-[#bd622f] grid place-items-center mx-auto"><LockKeyhole/></span><h1 className="text-2xl font-semibold mt-5">Acceso restringido</h1><p className="text-sm text-[#6e7873] mt-2">Tu rol no tiene permiso para abrir este módulo. Solicita acceso a un propietario o administrador.</p><NavLink to="/" className="inline-block mt-6 rounded-xl bg-[#173c2e] text-white px-4 py-2.5 font-semibold text-sm">Volver al Dashboard</NavLink></div>;return children}
 
 export default function App() {
   const [loggedIn,setLoggedIn]=useState(()=>sessionStorage.getItem('restaurantos-session')==='true')
+  const [access,setAccess]=useState<AccessProfile|null>(null)
   const nav=useNavigate()
+  useEffect(()=>{if(!loggedIn)return;let active=true;getCurrentAccess().then(value=>{if(active)setAccess(value)}).catch(()=>{if(active)setAccess(null)});return()=>{active=false}},[loggedIn])
   const login=()=>{sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true);nav('/')}
   const logout=async()=>{if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('restaurantos-session');setLoggedIn(false);nav('/login')}
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
-  return <Shell onLogout={logout}><AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes>
-    <Route path="/" element={<Dashboard/>}/>
-    <Route path="/acciones" element={<ActionCenter/>}/>
-    <Route path="/empleados" element={<EmployeesManagement/>}/><Route path="/horarios" element={<ScheduleManagement/>}/>
-    <Route path="/fichajes" element={<TimeTracking/>}/>
-    <Route path="/operaciones" element={<OperationsHub/>}/>
-    <Route path="/compras" element={<PurchasesHub/>}/>
-    <Route path="/inventario" element={<InventoryHub/>}/>
-    <Route path="/rentabilidad" element={<ProfitabilityHub/>}/>
-    <Route path="/clientes" element={<CommercialHub/>}/>
-    <Route path="/caja" element={<CashHub/>}/>
-    <Route path="/facturacion" element={<BillingHub/>}/>
-    <Route path="/integraciones" element={<IntegrationsHub/>}/>
-    <Route path="/seguridad" element={<SecurityHub/>}/>
-    <Route path="/configuracion" element={<SettingsHome/>}/><Route path="/configuracion/empresa" element={<CompanySettings/>}/><Route path="/configuracion/restaurantes" element={<RestaurantsSettings/>}/><Route path="/configuracion/usuarios" element={<UsersSettings/>}/><Route path="/configuracion/roles" element={<RolesSettings/>}/><Route path="/configuracion/catalogos" element={<CatalogsSettings/>}/><Route path="/mi-app" element={<EmployeePortal/>}/>
+  const guard=(module:string,children:ReactNode)=><ModuleGuard access={access} module={module}>{children}</ModuleGuard>
+  return <Shell onLogout={logout} access={access}><AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes>
+    <Route path="/" element={guard('dashboard',<Dashboard/>)}/>
+    <Route path="/acciones" element={guard('operations',<ActionCenter/>)}/>
+    <Route path="/empleados" element={guard('people',<EmployeesManagement/>)}/><Route path="/horarios" element={guard('schedule',<ScheduleManagement/>)}/>
+    <Route path="/fichajes" element={guard('schedule',<TimeTracking/>)}/>
+    <Route path="/operaciones" element={guard('operations',<OperationsHub/>)}/>
+    <Route path="/compras" element={guard('purchases',<PurchasesHub/>)}/>
+    <Route path="/inventario" element={guard('inventory',<InventoryHub/>)}/>
+    <Route path="/rentabilidad" element={guard('profitability',<ProfitabilityHub/>)}/>
+    <Route path="/clientes" element={guard('customers',<CommercialHub/>)}/>
+    <Route path="/caja" element={guard('cash',<CashHub/>)}/>
+    <Route path="/facturacion" element={guard('billing',<BillingHub/>)}/>
+    <Route path="/integraciones" element={guard('integrations',<IntegrationsHub/>)}/>
+    <Route path="/seguridad" element={guard('settings',<SecurityHub/>)}/>
+    <Route path="/configuracion" element={guard('settings',<SettingsHome/>)}/><Route path="/configuracion/empresa" element={guard('settings',<CompanySettings/>)}/><Route path="/configuracion/restaurantes" element={guard('settings',<RestaurantsSettings/>)}/><Route path="/configuracion/usuarios" element={guard('settings',<UsersSettings/>)}/><Route path="/configuracion/roles" element={guard('settings',<RolesSettings/>)}/><Route path="/configuracion/catalogos" element={guard('settings',<CatalogsSettings/>)}/><Route path="/mi-app" element={guard('schedule',<EmployeePortal/>)}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Suspense></AppErrorBoundary></Shell>
 }

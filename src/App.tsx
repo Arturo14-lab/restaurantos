@@ -1,5 +1,5 @@
 import { Component, Suspense, lazy, useEffect, useState, type ErrorInfo, type FormEvent, type ReactNode } from 'react'
-import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Banknote, BarChart3, Bell, Boxes, CalendarDays, Check, ChevronLeft, ChevronRight, CircleUserRound, ClipboardCheck, Clock3, CloudCog, ContactRound, FileText, LayoutDashboard, ListTodo, LockKeyhole, LogOut, Menu, Plus, Search, Settings, ShoppingCart, Users, UtensilsCrossed, Wrench, X } from 'lucide-react'
 import { employees, shifts } from './data/demo'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
@@ -26,6 +26,7 @@ const BillingHub=lazy(()=>import('./features/billing/BillingHub').then(m=>({defa
 const IntegrationsHub=lazy(()=>import('./features/integrations/IntegrationsHub').then(m=>({default:m.IntegrationsHub})))
 const SecurityHub=lazy(()=>import('./features/security/SecurityHub').then(m=>({default:m.SecurityHub})))
 const OnboardingWizard=lazy(()=>import('./features/onboarding/OnboardingWizard').then(m=>({default:m.OnboardingWizard})))
+const InvitationAccept=lazy(()=>import('./features/onboarding/InvitationAccept').then(m=>({default:m.InvitationAccept})))
 
 const days = ['Lun 7', 'Mar 8', 'Mié 9', 'Jue 10', 'Vie 11', 'Sáb 12', 'Dom 13']
 
@@ -202,10 +203,13 @@ export default function App() {
   const [loggedIn,setLoggedIn]=useState(()=>sessionStorage.getItem('restaurantos-session')==='true')
   const [access,setAccess]=useState<AccessProfile|null>(null)
   const nav=useNavigate()
+  const location=useLocation()
+  useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>{if(data.session){sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true)}});const{data}=supabase.auth.onAuthStateChange((_event,session)=>{if(session){sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true)}});return()=>data.subscription.unsubscribe()},[])
   useEffect(()=>{if(!loggedIn)return;let active=true;getCurrentAccess().then(value=>{if(active)setAccess(value)}).catch(()=>{if(active)setAccess(null)});return()=>{active=false}},[loggedIn])
-  useEffect(()=>{if(access?.roleName==='Sin rol')nav('/inicio')},[access,nav])
+  useEffect(()=>{if(access?.roleName==='Sin rol'&&!location.pathname.startsWith('/aceptar-invitacion'))nav('/inicio')},[access,nav,location.pathname])
   const login=()=>{sessionStorage.setItem('restaurantos-session','true');setLoggedIn(true);nav('/')}
   const logout=async()=>{if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('restaurantos-session');setLoggedIn(false);nav('/login')}
+  if(location.pathname.startsWith('/aceptar-invitacion'))return <AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><InvitationAccept/></Suspense></AppErrorBoundary>
   if(!loggedIn) return <Routes><Route path="*" element={<Login onLogin={login}/>}/></Routes>
   const guard=(module:string,children:ReactNode)=><ModuleGuard access={access} module={module}>{children}</ModuleGuard>
   if(access?.roleName==='Sin rol')return <AppErrorBoundary><Suspense fallback={<ModuleLoading/>}><Routes><Route path="*" element={<OnboardingWizard/>}/></Routes></Suspense></AppErrorBoundary>
@@ -227,3 +231,4 @@ export default function App() {
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Suspense></AppErrorBoundary></Shell>
 }
+
